@@ -151,9 +151,12 @@ printnum(int64_t num) {
 	int64_t n, pow;
 	int e;
 
-	if (num < 0) {
+	// consolidate to a negative number since that can represent the biggest absolute value
+	// -INT64_MIN would produce overflow (-9223372036854775808 is not representable as a positive number)
+	if (num >= 0) {
+		num = -num;
+	} else {
 		printf("minus ");
-		num *= -1;
 	}
 
 	if (num == 0) {
@@ -161,11 +164,12 @@ printnum(int64_t num) {
 		return;
 	}
 
-	for (n = num, e = 0, pow = 1; n >= 1000; n /= 1000, e++, pow *= 1000);
+	for (n = num, e = 0, pow = 1; n <= -1000; n /= 1000, e++, pow *= 1000);
 
 	for ( ; e >= 0; e--, pow /= 1000 ) {
 		int part = num / pow;
-		num -= part * pow;
+		part = -part;
+		num += part * pow;
 
 		if (part == 0) {
 			continue;
