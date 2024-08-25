@@ -20,6 +20,7 @@
 
 #include <err.h>
 #include <errno.h>
+#include <inttypes.h>  // for (f)printf format macros
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -98,13 +99,31 @@ main(int argc, char* argv[]) {
 			errx(1, "Too much information!");
 	}
 
+	//fprintf(stderr, "start: %"PRId64" step: %"PRId64" end: %"PRId64"\n", start, step, end);
+	// https://gcc.gnu.org/onlinedocs/gcc/Integer-Overflow-Builtins.html
+	// https://clang.llvm.org/docs/LanguageExtensions.html#checked-arithmetic-builtins
+
 	if (step > 0 && start <= end) {
-		for (int64_t i = start; i <= end; i+= step) {
+		for (int64_t i = start; i <= end;) {
 			printnum(i);
+			if (i >= end) break;
+
+			int64_t next;
+			if (__builtin_add_overflow(i, step, &next)) {
+				errx(1, "Overflow detected for: %" PRId64 " + %" PRId64, i, step);
+			}
+			i = next;
 		}
 	} else if (step < 0 && start >= end) {
-		for (int64_t i = start; i >= end; i+= step) {
+		for (int64_t i = start; i >= end;) {
 			printnum(i);
+			if (i <= end) break;
+
+			int64_t next;
+			if (__builtin_add_overflow(i, step, &next)) {
+				errx(1, "Underflow detected for: %" PRId64 " + %" PRId64, i, step);
+			}
+			i = next;
 		}
 	} else {
 		errx(1, "Nice try");
